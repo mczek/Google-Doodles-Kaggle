@@ -7,7 +7,10 @@ import csv
 import pandas as pd
 import ast
 import matplotlib.pyplot as plt
-import numpy as np
+import numpy
+import os
+
+os.chdir("/Users/michael/Desktop/cs451/fp")
 
 def load_csv(filename):
     '''
@@ -138,8 +141,9 @@ def plotLines(pointTuples, show = False):
     return canvas
     
 
-def assembleDrawings(objects):
+def assembleDrawings(objects, frac = 1):
     fullRawData = assembleData(objects)
+    fullRawData = fullRawData[1:round(frac*len(fullRawData))]
     drawings, labels, keys, rec, countries = cleanData(fullRawData)
     pics = []
     nDrawings = len(drawings)
@@ -147,15 +151,20 @@ def assembleDrawings(objects):
         print(str(ctr) + " / " + str(nDrawings))
         pics.append(createDrawing(drawings[ctr]))
     return pics,labels, keys, rec, countries
-    
+
+
+
+
+
 #objects = ["The Mona Lisa"]
 #x = cleanPoints(createPixels((50,47), (150,167)))
 #y = assembleData(objects)
 #drawings, labels, keys, rec, countries = cleanData(y[1:15])
 #a = createDrawing(drawings[4])
 #b = plotLines(a, show = True)
-objects = ["owl"]
-cleanDrawings, labels, keys, rec, country = assembleDrawings(objects)
+#if __name__ == "__main__":
+#    objects = ["owl"]
+#    cleanDrawings, labels, keys, rec, country = assembleDrawings(objects)
     
 #y = np.zeros((256,256))
 #x.reshape((2,len(x)/2))
