@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy
 import os
 
-os.chdir("/Users/michael/Desktop/cs451/fp")
+
 
 def load_csv(filename):
     '''
