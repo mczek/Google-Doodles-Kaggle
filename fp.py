@@ -7,9 +7,9 @@ import csv
 import pandas as pd
 import ast
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 import os
-
+import random
 
 
 def load_csv(filename):
@@ -32,12 +32,57 @@ def assembleData(objects):
     '''
     print("Assembling Data")
     data = []
+    data1 = []
+    data2 = []
+    encodings = {}
+    i = 0
+    nObjects = len(objects)
+    while i <= nObjects:
+        elt1 = objects[i]
+        data1.extend(load_csv(elt1 + ".csv"))
+        encodings[i] = [elt1]
+        elt2 = objects[i+1]
+        data1.extend(load_csv(elt2 + ".csv"))
+        encodings[i+1] = [elt2]
+        i += 2
+    # print(encodings)
     for elt in objects:
         data.extend(load_csv(elt + ".csv"))
-    return data
+        encodings[i] = [elt]
+        i += 1
+    #print(encodings)
+    return np.array(data), encodings
     
-    
-def cleanData(data):
+def assembleFullObjectData():
+    '''
+    gets data for every object in the training set
+    '''
+    objects = os.listdir(".")
+    objects.remove('train_simplified.zip')
+    objects.remove('.DS_Store')
+    objects.remove('test_simplified.csv')
+    objects.remove('GitHub')
+    print("Assembling FullData")
+    fullData = []
+    data1 = []
+    data2 = []
+    encodings = {}
+    nObjects = len(objects)
+    i = 0
+    while i <= nObjects:
+        print(str(i) + " / " + str(nObjects))
+        data1.extend(load_csv(objects[i]))
+        data2.extend(load_csv(objects[i+1]))
+        encodings[objects[i]] = [i]
+        encodings[objects[i+1]] = [i+1]
+        i+=2
+    # print(encodings)
+    data.extend(data1)
+    data.extend(data2)
+
+    return np.array(data), encodings
+
+def cleanData(data, encodings):
     '''
     cleans assembled data
     '''
@@ -49,8 +94,8 @@ def cleanData(data):
     rec = []
     countries = []
     for elt in data:
-        #print(elt)
-        labels.append(elt["word"])
+        #print(elt["word"])
+        labels.append(encodings[elt["word"]])
         drawings.append(eval(elt["drawing"]))
         keys.append(elt["key_id"])
         rec.append(elt["recognized"])
@@ -142,26 +187,39 @@ def plotLines(pointTuples, show = False):
     
 
 def assembleDrawings(objects, frac = 1):
-    fullRawData = assembleData(objects)
+    fullRawData, encodings = assembleData(objects)
+    random.shuffle(fullRawData)
     fullRawData = fullRawData[1:round(frac*len(fullRawData))]
-    drawings, labels, keys, rec, countries = cleanData(fullRawData)
+    drawings, labels, keys, rec, countries = cleanData(fullRawData, encodings)
     pics = []
     nDrawings = len(drawings)
     for ctr in range(nDrawings):
         print(str(ctr) + " / " + str(nDrawings))
-        pics.append(createDrawing(drawings[ctr]))
-    return pics,labels, keys, rec, countries
+        canvas = plotLines(createDrawing(drawings[ctr]))
+        pics.append(canvas)
+    return np.array(pics), np.array(labels), keys, rec, countries
+
+
+def sampleData(dirtyData, encodings, sampleSize):
+    m = len(dirtyData)
+    samp = random.sample(range(m), sampleSize)
+    dataSubset = dirtyData[samp]
+    drawings, labels, keys, rec, countries = cleanData(dataSubset, encodings)
+    pics = []
+    for ctr in range(sampleSize):
+        #print(str(ctr) + " / " + str(m))
+        canvas = plotLines(createDrawing(drawings[ctr]))
+        pics.append(canvas.reshape((256,256,1)))
+    return np.array(pics), np.array(labels), keys, rec, countries
 
 
 
-
-
-#objects = ["The Mona Lisa"]
-#x = cleanPoints(createPixels((50,47), (150,167)))
-#y = assembleData(objects)
-#drawings, labels, keys, rec, countries = cleanData(y[1:15])
-#a = createDrawing(drawings[4])
-#b = plotLines(a, show = True)
+objects = ["airplane"]
+x = cleanPoints(createPixels((50,47), (50,147)))
+y, encodings, decode = assembleData(objects)
+drawings, labels, keys, rec, countries = cleanData(y[1:15], encodings)
+a = createDrawing(drawings[5])
+b = plotLines(a, show = True)
 #if __name__ == "__main__":
 #    objects = ["owl"]
 #    cleanDrawings, labels, keys, rec, country = assembleDrawings(objects)
