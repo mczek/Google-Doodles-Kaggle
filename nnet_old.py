@@ -11,17 +11,10 @@ import os
 import numpy as np
 import random
 import csv
-import time
-#from tensorflow.keras.callbacks
-#import tensorflow.keras.backend as K
-#from keras import backend as K
-#os.chdir("/data/scratch/mczekanski/")
-os.chdir("/Users/michael/Desktop/cs451/fp/")
+import tensorflow.keras.backend as K
 
-objects = ["airplane", "train"]
-arch = [1]
-#arch = [16, 32, 64, 128]
-nEpochs = 5
+os.chdir("/Users/michael/Desktop/cs451/fp")
+
 
 def load_csv(filename):
     '''
@@ -137,16 +130,16 @@ def createPixels(point_1, point_2):
                 xval = (y - pt1y + pt1x)
             else:
                 xval = (y - pt1y + pt1x * slope) / slope
-            xval = min(xval, 255)
-            xval = max(xval, 0)
+            #xval = min(xval, 255)
+            #xval = max(xval, 0)
             x.extend((math.floor(xval), math.ceil(xval)))
             pixels.append((x, y))
 
         for x in range(min(pt2x, pt1x) + 1, max(pt2x, pt1x)):
             y = []
             yval = slope * (x - pt1x) + pt1y
-            yval = min(yval, 255)
-            yval = max(yval, 0)
+            #yval = min(yval, 255)
+            #yval = max(yval, 0)
             y.extend((math.floor(yval), math.ceil(yval)))
             pixels.append((x, y))
     else:  # pt1x == pt2x
@@ -170,15 +163,15 @@ def cleanPoints(pointTuples):
             # print(y)
             for elty in y:
                 # print("elt y " + str(elty))
-#                assert(int(x-1) <= 255 and int(x-1) >=0 )
-#                assert (int(elty-1) <= 255 and int(elty-1) >=0)
-                totalPts.append((int(x) - 1, int(elty) - 1))
+                assert(int(x) <= 255 and int(x) >=0 )
+                assert (int(elty) <= 255 and int(elty) >=0)
+                totalPts.append((int(x), int(elty)))
         else:
             for eltx in x:
                 # print("elt x " + str(eltx))
-#                assert (int(eltx-1) <= 255 and int(eltx-1) >= 0)
-#                assert (int(y-1) <= 255 and int(y-1) >= 0)
-                totalPts.append((int(eltx) - 1, int(y) - 1))
+                assert (int(eltx) <= 255 and int(eltx) >= 0)
+                assert (int(y) <= 255 and int(y) >= 0)
+                totalPts.append((int(eltx), int(y)))
 
     return totalPts
 
@@ -264,12 +257,10 @@ def createRegNetwork(arch, nClasses):
 
 def createCNN(arch, nClasses):
     model = keras.Sequential()
-    model.add(keras.layers.Conv2D(1, kernel_size=5, activation= 'relu', input_shape = (256,256,1))) #32
-    model.add(keras.layers.MaxPool2D(pool_size = (3,3)))
-    model.add(keras.layers.Conv2D(1, kernel_size=7, activation= 'relu')) #64
-    model.add(keras.layers.MaxPool2D(pool_size=(5, 5)))
-    model.add(keras.layers.Conv2D(1, kernel_size=5, activation= 'relu')) #128
-    model.add(keras.layers.MaxPool2D(pool_size = (7,7)))
+    model.add(keras.layers.Conv2D(5, kernel_size=5, activation= 'relu', input_shape = (256,256,1)))
+    model.add(keras.layers.MaxPool2D(pool_size = (5,5)))
+    model.add(keras.layers.Conv2D(5, kernel_size=7, activation= 'relu'))
+    model.add(keras.layers.MaxPool2D(pool_size=(7, 7)))
     model.add(keras.layers.Flatten())
     for num in arch:
         model.add(keras.layers.Dense(num, activation = tf.nn.relu))
@@ -277,48 +268,8 @@ def createCNN(arch, nClasses):
     model.compile(optimizer=tf.train.AdamOptimizer(),
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
-    tensorboard = tf.keras.callbacks.TensorBoard()
     return(model)
 
-def createVGG16(nClasses):
-    '''
-    https://hackernoon.com/learning-keras-by-implementing-vgg16-from-scratch-d036733f2d5
-    '''
-    model = keras.Sequential()
-    model.add(keras.layers.Conv2D(64, (3,3), activation= 'relu', input_shape = (256,256,1)))
-    model.add(keras.layers.Conv2D(64, (3,3), activation= 'relu'))
-    model.add(keras.layers.MaxPool2D(pool_size = (2,2)))
-
-    model.add(keras.layers.Conv2D(128, (3,3), activation= 'relu'))
-    model.add(keras.layers.Conv2D(128, (3,3), activation= 'relu'))
-    model.add(keras.layers.MaxPool2D(pool_size = (2,2)))
-
-    model.add(keras.layers.Conv2D(256, (3,3), activation= 'relu'))
-    model.add(keras.layers.Conv2D(256, (3,3), activation= 'relu'))
-    model.add(keras.layers.Conv2D(256, (3,3), activation= 'relu'))
-    model.add(keras.layers.MaxPool2D(pool_size = (2,2)))
-
-    model.add(keras.layers.Conv2D(512, (3,3), activation= 'relu'))
-    model.add(keras.layers.Conv2D(512, (3,3), activation= 'relu'))
-    model.add(keras.layers.Conv2D(512, (3,3), activation= 'relu'))
-    model.add(keras.layers.MaxPool2D(pool_size = (2,2)))
-
-    model.add(keras.layers.Conv2D(512, (3,3), activation= 'relu'))
-    model.add(keras.layers.Conv2D(512, (3,3), activation= 'relu'))
-    model.add(keras.layers.Conv2D(512, (3,3), activation= 'relu'))
-    model.add(keras.layers.MaxPool2D(pool_size = (2,2)))
-    
-    model.add(keras.layers.Flatten())
-    model.add(keras.layers.Dense(410, activation = tf.nn.relu))
-    model.add(keras.layers.Dense(410, activation = tf.nn.relu))
-    model.add(keras.layers.Dense(100, activation = "softmax"))
-
-    model.compile(optimizer=tf.train.AdamOptimizer(),
-                  loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
-
-    return(model)
-    
 def top_3_accuracy(y_true, y_pred):
     return tf.keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
 
@@ -334,27 +285,19 @@ def generator(dirtyData, encodings, batch_size):
 def runRegNet(arch, objects, numSteps, numEpochs):
     fullRawData, encodings, decode = assembleData(objects)
     model = createRegNetwork(arch, len(objects))
- #   K.set_session(tf.Session(config = tf.ConfigProto(intra_op_parallelism_threads=3, inter_op_parallelism_threads=2, allow_soft_placement=True, device_count = {'CPU': 3})))
+    K.set_session(tf.Session(config = tf.ConfigProto(intra_op_parallelism_threads=3, inter_op_parallelism_threads=2, allow_soft_placement=True, device_count = {'CPU': 3})))
     model.fit_generator(generator(fullRawData, encodings, 10), steps_per_epoch=numSteps, epochs=numEpochs)
     return (model)
 
 def runCNN(arch, objects, numEpochs):
     fullRawData, encodings, decode = assembleData(objects)
     #print(len(fullRawData))
-    numSteps = len(fullRawData)//100 #10
+    numSteps = len(fullRawData)//10
     model = createCNN(arch, len(objects))
-#    K.set_session(tf.Session(config=tf.ConfigProto(intra_op_parallelism_threads=3, inter_op_parallelism_threads=2, allow_soft_placement=True, device_count={'CPU': 3})))
+    K.set_session(tf.Session(config=tf.ConfigProto(intra_op_parallelism_threads=3, inter_op_parallelism_threads=2, allow_soft_placement=True, device_count={'CPU': 3})))
     model.fit_generator(generator(fullRawData, encodings, 10), steps_per_epoch=numSteps, epochs=numEpochs)
     return(model)
 
-def runVGG16(objects, numEpochs):
-    fullRawData, encodings, decode = assembleData(objects)
-    #print(len(fullRawData))
-    numSteps = len(fullRawData)//10 #10
-    model = createVGG16(len(objects))
-#   K.set_session(tf.Session(config=tf.ConfigProto(intra_op_parallelism_threads=3, inter_op_parallelism_threads=2, allow_soft_placement=True, device_count={'CPU': 3})))
-    model.fit_generator(generator(fullRawData, encodings, 10), steps_per_epoch=numSteps, epochs=numEpochs, callbacks=[tensorboard])
-    return(model)
 
 #fullRawData, encodings = assembleData(objects)
 #model = createRegNetwork([100], len(objects))
@@ -365,13 +308,7 @@ def runVGG16(objects, numEpochs):
 #model.fit(X_train, y_train)
 
 #fullRawData, encodings, decode = assembleData(fullObjects)
-start = time.time()
-#with tf.device("/gpu:1"):
-m = runCNN(arch = arch, objects = objects, numEpochs = nEpochs)
-#m = runVGG16(objects = objects, numEpochs = nEpochs)
-
-print("Runtime in hours:")
-print((time.time() - start) / 3600)
+m = runCNN(arch = [1], objects = ["airplane"], numEpochs = 1)
 
 #img = tf.placeholder(tf.float32, shape=(256, 256))
 #arch = [1]
@@ -734,6 +671,3 @@ fullObjects = ['line',
  'castle',
  'river',
  'bandage']
-
-#with tf.device("/gpu:1"):
-#    m = runCNN(arch = arch, objects = fullObjects, numEpochs = nEpochs)
